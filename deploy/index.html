@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Quiz Online - Tes Pilihan Ganda</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      min-height: 100%;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #172554 100%);
+      color: #fff;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    html { height: 100%; }
+    body { min-height: 100%; overflow-y: auto; }
+    #app { min-height: 100vh; display: flex; flex-direction: column; }
+    .page { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .card-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .icon-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .icon-circle svg { width: 32px; height: 32px; color: #bfdbfe; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    p.subtitle { color: #bfdbfe; font-size: 14px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: #dbeafe; margin-bottom: 6px; }
+    input[type="text"], input[type="url"], input[type="number"] {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    input::placeholder { color: rgba(191,219,254,0.5); }
+    input:focus { border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,0.2); }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #3b82f6; color: #fff; box-shadow: 0 4px 15px rgba(59,130,246,0.35); }
+    .btn-primary:hover { background: #60a5fa; }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+    .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+    .btn-success { background: #22c55e; color: #fff; box-shadow: 0 4px 15px rgba(34,197,94,0.35); }
+    .btn-success:hover { background: #4ade80; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .alert { padding: 12px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 16px; }
+    .alert-error { background: rgba(239,68,68,0.2); border: 1px solid rgba(248,113,113,0.3); color: #fecaca; }
+    .alert-info { background: rgba(59,130,246,0.2); border: 1px solid rgba(96,165,250,0.3); color: #dbeafe; }
+    .alert-success { background: rgba(34,197,94,0.2); border: 1px solid rgba(74,222,128,0.3); color: #bbf7d0; }
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+    .feature-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 6px; text-align: center; }
+    .feature-item svg { width: 20px; height: 20px; color: #93c5fd; margin: 0 auto 6px; }
+    .feature-item span { font-size: 11px; color: #bfdbfe; }
+    .text-link { background: none; border: none; color: rgba(191,219,254,0.7); font-size: 12px; text-decoration: underline; cursor: pointer; margin-top: 16px; }
+    .text-link:hover { color: #bfdbfe; }
+    .loading { text-align: center; }
+    .spinner { width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.1); border-top-color: #bfdbfe; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Quiz Page */
+    .quiz-layout { flex: 1; display: flex; flex-direction: column; max-width: 680px; margin: 0 auto; width: 100%; }
+    .quiz-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(30,58,138,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 16px;
+    }
+    .quiz-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .user-info { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: rgba(59,130,246,0.4); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; flex-shrink: 0; }
+    .user-name { font-size: 13px; color: #bfdbfe; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .timer {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 20px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 14px; font-weight: 700;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    }
+    .timer.urgent { background: rgba(239,68,68,0.2); border-color: rgba(248,113,113,0.3); color: #fecaca; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+    .progress-container { display: flex; align-items: center; gap: 10px; }
+    .progress-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #60a5fa; border-radius: 3px; transition: width 0.3s; }
+    .progress-text { font-size: 11px; color: #93c5fd; white-space: nowrap; }
+    .quiz-content { flex: 1; padding: 16px; }
+    .question-card {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px; padding: 18px; margin-bottom: 16px;
+    }
+    .question-badges { display: flex; gap: 8px; margin-bottom: 12px; }
+    .badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
+    .badge-blue { background: #3b82f6; color: #fff; }
+    .badge-green { background: rgba(34,197,94,0.3); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+    .question-text { font-size: 16px; line-height: 1.6; color: #fff; }
+    .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .option {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px; border-radius: 12px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+      cursor: pointer; transition: all 0.2s; text-align: left; color: #fff;
+    }
+    .option:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); }
+    .option.selected { background: rgba(59,130,246,0.3); border-color: rgba(96,165,250,0.5); }
+    .option-key {
+      width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.1); color: #bfdbfe; font-weight: 700; font-size: 14px;
+    }
+    .option.selected .option-key { background: #3b82f6; color: #fff; }
+    .option-text { padding-top: 6px; font-size: 14px; line-height: 1.5; }
+    .nav-buttons { display: flex; gap: 10px; margin-bottom: 12px; }
+    .nav-buttons .btn { flex: 1; }
+    .nav-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+    .nav-btn:active { transform: scale(0.98); }
+    .nav-btn-prev { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+    .nav-btn-prev:hover { background: rgba(255,255,255,0.15); }
+    .nav-btn-next { background: #3b82f6; color: #fff; }
+    .nav-btn-next:hover { background: #60a5fa; }
+    .nav-btn-finish { background: #22c55e; color: #fff; }
+    .nav-btn-finish:hover { background: #4ade80; }
+    .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .toggle-nav {
+      width: 100%; padding: 12px; border-radius: 12px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      color: #bfdbfe; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .toggle-nav:hover { background: rgba(255,255,255,0.1); }
+    .question-grid {
+      margin-top: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px; padding: 16px;
+    }
+    .qgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+    .qgrid button {
+      aspect-ratio: 1; border-radius: 10px; border: none; font-weight: 700; font-size: 13px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .qgrid .q-default { background: rgba(255,255,255,0.05); color: #bfdbfe; border: 1px solid rgba(255,255,255,0.1); }
+    .qgrid .q-default:hover { background: rgba(255,255,255,0.12); }
+    .qgrid .q-answered { background: rgba(34,197,94,0.25); color: #86efac; border: 1px solid rgba(74,222,128,0.3); }
+    .qgrid .q-current { background: #3b82f6; color: #fff; box-shadow: 0 0 0 2px #93c5fd; }
+    .legend { display: flex; gap: 14px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #93c5fd; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal {
+      background: #1e3a8a; border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px; padding: 24px; max-width: 360px; width: 100%;
+    }
+    .modal-icon { width: 56px; height: 56px; border-radius: 50%; background: rgba(234,179,8,0.2); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    .modal-icon svg { width: 28px; height: 28px; color: #fde047; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .modal-actions button { flex: 1; padding: 12px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .modal-actions .btn-cancel { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+    .modal-actions .btn-confirm { background: #22c55e; color: #fff; }
+
+    /* Result */
+    .score-circle { position: relative; width: 160px; height: 160px; margin: 0 auto 20px; }
+    .score-circle svg { transform: rotate(-90deg); }
+    .score-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .score-emoji { font-size: 36px; }
+    .score-percent { font-size: 26px; font-weight: 700; color: #fff; }
+    .grade { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .grade-msg { font-size: 14px; color: #bfdbfe; margin-bottom: 20px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    .stat-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 8px; text-align: center; }
+    .stat-value { font-size: 22px; font-weight: 700; color: #fff; }
+    .stat-label { font-size: 11px; color: #93c5fd; margin-top: 4px; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 480px) {
+      .card { padding: 20px; }
+      h1 { font-size: 22px; }
+      .qgrid { grid-template-columns: repeat(5, 1fr); }
+      .feature-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    // ================== QUIZ APP ==================
+    const API_URL_KEY = 'quiz_api_url';
+    const TIMER_KEY = 'quiz_timer_minutes';
+    const STATE_KEY = 'quiz_app_state';
+
+    function $(sel) { return document.querySelector(sel); }
+    function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+    function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; } }
+    function shuffle(arr) { const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+    function formatTime(sec){ const m=Math.floor(sec/60),s=sec%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+
+    let state = {
+      phase: 'config',
+      apiUrl: load(API_URL_KEY, ''),
+      timerMinutes: load(TIMER_KEY, 30),
+      userName: '',
+      questions: [],
+      answers: {},
+      currentIndex: 0,
+      timeLeft: 0,
+      result: null,
+      loading: false,
+      error: '',
+      submitStatus: '',
+      showNav: false,
+      showConfirm: false,
+      autoSubmitted: false,
+      isSubmitting: false
+    };
+
+    let timerInterval = null;
+
+    function persistQuizState() {
+      if (state.phase === 'quiz') {
+        sessionStorage.setItem(STATE_KEY, JSON.stringify({
+          phase: state.phase,
+          userName: state.userName,
+          questions: state.questions,
+          answers: state.answers,
+          currentIndex: state.currentIndex,
+          timeLeft: state.timeLeft
+        }));
+      } else if (state.phase === 'result') {
+        sessionStorage.setItem(STATE_KEY, JSON.stringify({
+          phase: state.phase,
+          userName: state.userName,
+          result: state.result,
+          submitStatus: state.submitStatus
+        }));
+      }
+    }
+
+    function restoreQuizState() {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(STATE_KEY));
+        if (saved && saved.phase === 'quiz') {
+          state = { ...state, ...saved, answers: saved.answers || {} };
+          return true;
+        }
+      } catch {}
+      return false;
+    }
+
+    function clearQuizState() {
+      sessionStorage.removeItem(STATE_KEY);
+    }
+
+    function setPhase(phase) {
+      state.phase = phase;
+      render();
+    }
+
+    async function fetchQuestions() {
+      if (!state.apiUrl) { state.error = 'URL API belum dikonfigurasi'; render(); return; }
+      state.loading = true; state.error = ''; render();
+      try {
+        const res = await fetch(`${state.apiUrl}?action=getQuestions`);
+        const data = await res.json();
+        if (data.success && data.questions && data.questions.length > 0) {
+          state.questions = shuffle(data.questions);
+          state.answers = {};
+          state.currentIndex = 0;
+          state.timeLeft = state.timerMinutes * 60;
+          state.autoSubmitted = false;
+          state.isSubmitting = false;
+          state.phase = 'quiz';
+          startTimer();
+          persistQuizState();
+        } else {
+          state.error = 'Tidak ada soal ditemukan di spreadsheet.';
+        }
+      } catch (e) {
+        state.error = 'Gagal mengambil soal. Periksa URL API dan koneksi internet.';
+      }
+      state.loading = false;
+      render();
+    }
+
+    function calculateResult() {
+      let skor = 0;
+      state.questions.forEach(q => {
+        if (state.answers[q.id] && state.answers[q.id].toUpperCase() === String(q.jawaban).toUpperCase().trim()) skor++;
+      });
+      const total = state.questions.length;
+      const persentase = total > 0 ? ((skor/total)*100).toFixed(1) : '0';
+      return { nama: state.userName, skor, total_soal: total, persentase };
+    }
+
+    async function submitResult() {
+      if (state.isSubmitting) return;
+      state.isSubmitting = true;
+      state.submitStatus = 'Mengirim hasil ke database...';
+      state.phase = 'submitting';
+      render();
+      try {
+        await fetch(state.apiUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'submitResult',
+            nama: state.result.nama,
+            skor: state.result.skor,
+            total_soal: state.result.total_soal,
+            persentase: state.result.persentase
+          })
+        });
+        state.submitStatus = 'Hasil berhasil dikirim!';
+      } catch (e) {
+        state.submitStatus = 'Gagal mengirim hasil. Silakan coba lagi.';
+      }
+      state.phase = 'result';
+      persistQuizState();
+      render();
+    }
+
+    async function finishQuiz() {
+      stopTimer();
+      state.result = calculateResult();
+      clearQuizState();
+      await submitResult();
+    }
+
+    function startTimer() {
+      stopTimer();
+      timerInterval = setInterval(() => {
+        state.timeLeft--;
+        persistQuizState();
+        render();
+        if (state.timeLeft <= 0 && !state.autoSubmitted) {
+          state.autoSubmitted = true;
+          finishQuiz();
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    function getGrade(p) {
+      if (p >= 90) return { label: 'Luar Biasa!', color: '#86efac', emoji: '🏆', msg: 'Penguasaan materi sangat baik.' };
+      if (p >= 75) return { label: 'Bagus!', color: '#93c5fd', emoji: '⭐', msg: 'Penguasaan materi sudah baik.' };
+      if (p >= 60) return { label: 'Cukup', color: '#fde047', emoji: '📚', msg: 'Masih perlu belajar lebih giat.' };
+      if (p >= 40) return { label: 'Kurang', color: '#fdba74', emoji: '💪', msg: 'Tingkatkan belajar Anda.' };
+      return { label: 'Perlu Peningkatan', color: '#fca5a5', emoji: '📖', msg: 'Perbanyak latihan dan belajar.' };
+    }
+
+    // ================== RENDERERS ==================
+    function renderConfig() {
+      return `
+        <div class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="icon-circle">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.11v1.093c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.204-.107-.397.165-.71.505-.78.929l-.15.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </div>
+              <h1>Konfigurasi Quiz</h1>
+              <p class="subtitle">Hubungkan dengan Google Sheets</p>
+            </div>
+            <form id="configForm">
+              <div class="form-group">
+                <label>URL Google Apps Script</label>
+                <input type="url" id="apiUrl" value="${escapeHtml(state.apiUrl)}" placeholder="https://script.google.com/macros/s/.../exec" required>
+              </div>
+              <div class="form-group">
+                <label>Durasi Timer (menit)</label>
+                <input type="number" id="timerMinutes" value="${state.timerMinutes}" min="1" max="180" required>
+              </div>
+              <div id="configError"></div>
+              <button type="submit" class="btn btn-primary">Simpan & Lanjutkan</button>
+              <div class="alert alert-info" style="margin-top:14px;">
+                💡 <strong>Petunjuk:</strong> Buat Google Spreadsheet dengan sheet <code>Soal</code> dan <code>Hasil</code>, lalu deploy Apps Script sebagai Web App.
+              </div>
+            </form>
+          </div>
+        </div>`;
+    }
+
+    function renderRegister() {
+      return `
+        <div class="page">
+          <div class="card">
+            <div class="card-header">
+              <div class="icon-circle" style="border-radius:50%;">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
+              </div>
+              <h1>Quiz Online</h1>
+              <p class="subtitle">Tes Pilihan Ganda</p>
+            </div>
+            <form id="registerForm">
+              <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="userName" value="${escapeHtml(state.userName)}" placeholder="Masukkan nama Anda..." autocomplete="name" required ${state.loading?'disabled':''}>
+              </div>
+              <div id="registerError">${state.error ? `<div class="alert alert-error">${escapeHtml(state.error)}</div>` : ''}</div>
+              <button type="submit" class="btn btn-primary" ${state.loading?'disabled':''}>
+                ${state.loading ? '<span class="spinner" style="width:18px;height:18px;border-width:2px;margin:0;"></span> Memuat soal...' : 'Mulai Quiz'}
+              </button>
+              <div class="feature-grid">
+                <div class="feature-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg><span>Pilihan Ganda</span></div>
+                <div class="feature-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Timer Mundur</span></div>
+                <div class="feature-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg><span>Skor Instan</span></div>
+              </div>
+            </form>
+            <div style="text-align:center;"><button class="text-link" id="reconfigureBtn">⚙️ Ubah Konfigurasi</button></div>
+          </div>
+        </div>`;
+    }
+
+    function renderQuiz() {
+      const q = state.questions[state.currentIndex];
+      const total = state.questions.length;
+      const answered = Object.keys(state.answers).length;
+      const progress = ((state.currentIndex + 1) / total) * 100;
+      const urgent = state.timeLeft <= 60;
+      const selected = state.answers[q.id] || '';
+      const opts = [
+        { key: 'A', text: q.opsi_a },
+        { key: 'B', text: q.opsi_b },
+        { key: 'C', text: q.opsi_c },
+        { key: 'D', text: q.opsi_d }
+      ];
+      return `
+        <div class="quiz-layout">
+          <div class="quiz-header">
+            <div class="quiz-header-top">
+              <div class="user-info"><div class="user-avatar">${state.userName.charAt(0).toUpperCase()}</div><span class="user-name">${escapeHtml(state.userName)}</span></div>
+              <div class="timer ${urgent?'urgent':''}">
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                ${formatTime(state.timeLeft)}
+              </div>
+            </div>
+            <div class="progress-container">
+              <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+              <span class="progress-text">${state.currentIndex+1}/${total}</span>
+            </div>
+          </div>
+          <div class="quiz-content">
+            <div class="question-card">
+              <div class="question-badges">
+                <span class="badge badge-blue">Soal ${state.currentIndex+1}</span>
+                ${selected ? '<span class="badge badge-green">✓ Terjawab</span>' : ''}
+              </div>
+              <p class="question-text">${escapeHtml(q.soal)}</p>
+            </div>
+            <div class="options">
+              ${opts.map(o => `
+                <button class="option ${selected===o.key?'selected':''}" data-key="${o.key}">
+                  <span class="option-key">${o.key}</span>
+                  <span class="option-text">${escapeHtml(o.text)}</span>
+                </button>
+              `).join('')}
+            </div>
+            <div class="nav-buttons">
+              <button class="nav-btn nav-btn-prev" id="prevBtn" ${state.currentIndex===0?'disabled':''}>Sebelumnya</button>
+              ${state.currentIndex < total-1 
+                ? '<button class="nav-btn nav-btn-next" id="nextBtn">Berikutnya</button>'
+                : '<button class="nav-btn nav-btn-finish" id="finishBtn">Selesai</button>'}
+            </div>
+            <button class="toggle-nav" id="toggleNav">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+              Navigasi Soal (${answered}/${total} terjawab)
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="transition:transform .2s;${state.showNav?'transform:rotate(180deg)':''}"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            ${state.showNav ? `
+              <div class="question-grid">
+                <div class="qgrid">
+                  ${state.questions.map((qq, idx) => {
+                    const cls = idx===state.currentIndex?'q-current':(state.answers[qq.id]?'q-answered':'q-default');
+                    return `<button class="${cls}" data-idx="${idx}">${idx+1}</button>`;
+                  }).join('')}
+                </div>
+                <div class="legend">
+                  <div class="legend-item"><div class="legend-dot" style="background:rgba(34,197,94,0.3);border:1px solid rgba(74,222,128,0.3)"></div>Terjawab</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)"></div>Belum</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;box-shadow:0 0 0 2px #93c5fd"></div>Saat ini</div>
+                </div>
+              </div>
+            ` : ''}
+            ${state.currentIndex < total-1 ? '<button class="toggle-nav" id="finishEarly" style="margin-top:10px;background:rgba(34,197,94,0.1);color:#86efac;border-color:rgba(74,222,128,0.2);">Selesaikan Quiz Sekarang</button>' : ''}
+          </div>
+          ${state.showConfirm ? `
+            <div class="modal-overlay" id="modalOverlay">
+              <div class="modal">
+                <div class="modal-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></div>
+                <h2 style="text-align:center;margin-bottom:8px;">Selesaikan Quiz?</h2>
+                <p style="text-align:center;color:#bfdbfe;font-size:13px;">${answered < total ? `Anda baru menjawab ${answered} dari ${total} soal. Soal yang tidak dijawab akan dianggap salah.` : `Anda telah menjawab semua ${total} soal. Kirim jawaban Anda?`}</p>
+                <div class="modal-actions">
+                  <button class="btn-cancel" id="cancelFinish">Kembali</button>
+                  <button class="btn-confirm" id="confirmFinish">Ya, Kirim!</button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        </div>`;
+    }
+
+    function renderSubmitting() {
+      return `
+        <div class="page">
+          <div class="loading">
+            <div class="spinner"></div>
+            <h2 style="margin-bottom:8px;">Mengirim Hasil...</h2>
+            <p class="subtitle">Harap tunggu, jawaban Anda sedang diproses</p>
+          </div>
+        </div>`;
+    }
+
+    function renderResult() {
+      const r = state.result;
+      const p = parseFloat(r.persentase);
+      const g = getGrade(p);
+      const c = 2 * Math.PI * 54;
+      const offset = c - (p/100)*c;
+      const color = p>=75?'#22c55e':p>=50?'#eab308':'#ef4444';
+      const statusClass = state.submitStatus.includes('berhasil') || state.submitStatus.includes('saved') ? 'alert-success' : state.submitStatus.includes('Gagal') ? 'alert-error' : 'alert-info';
+      const statusIcon = state.submitStatus.includes('berhasil') || state.submitStatus.includes('saved') ? '✅' : state.submitStatus.includes('Gagal') ? '❌' : '⏳';
+      return `
+        <div class="page">
+          <div class="card">
+            <div style="background:rgba(255,255,255,0.05);margin:-24px -24px 24px;padding:18px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);">
+              <p class="subtitle" style="margin-bottom:4px;">Hasil Quiz</p>
+              <h1>${escapeHtml(r.nama)}</h1>
+            </div>
+            <div class="score-circle">
+              <svg width="160" height="160" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                <circle cx="60" cy="60" r="54" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"/>
+              </svg>
+              <div class="score-inner">
+                <div class="score-emoji">${g.emoji}</div>
+                <div class="score-percent">${r.persentase}%</div>
+              </div>
+            </div>
+            <h2 class="grade" style="color:${g.color};text-align:center;">${g.label}</h2>
+            <p class="grade-msg" style="text-align:center;">${g.msg}</p>
+            <div class="stats-grid">
+              <div class="stat-item"><div class="stat-value">${r.skor}</div><div class="stat-label">Benar</div></div>
+              <div class="stat-item"><div class="stat-value">${r.total_soal - r.skor}</div><div class="stat-label">Salah</div></div>
+              <div class="stat-item"><div class="stat-value">${r.total_soal}</div><div class="stat-label">Total</div></div>
+            </div>
+            ${state.submitStatus ? `<div class="alert ${statusClass}" style="margin-bottom:18px;">${statusIcon} ${escapeHtml(state.submitStatus)}</div>` : ''}
+            <button class="btn btn-primary" id="resetBtn">Mulai Quiz Baru</button>
+            <p style="text-align:center;color:rgba(191,219,254,0.5);font-size:11px;margin-top:16px;">Hasil telah disimpan ke database</p>
+          </div>
+        </div>`;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function render() {
+      const app = $('#app');
+      switch (state.phase) {
+        case 'config': app.innerHTML = renderConfig(); bindConfig(); break;
+        case 'register': app.innerHTML = renderRegister(); bindRegister(); break;
+        case 'quiz': app.innerHTML = renderQuiz(); bindQuiz(); break;
+        case 'submitting': app.innerHTML = renderSubmitting(); break;
+        case 'result': app.innerHTML = renderResult(); bindResult(); break;
+      }
+    }
+
+    function bindConfig() {
+      $('#configForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const url = $('#apiUrl').value.trim();
+        const min = parseInt($('#timerMinutes').value, 10);
+        if (!url.includes('script.google.com')) {
+          $('#configError').innerHTML = '<div class="alert alert-error">URL harus berupa URL Google Apps Script yang valid</div>';
+          return;
+        }
+        if (min < 1 || min > 180) {
+          $('#configError').innerHTML = '<div class="alert alert-error">Durasi timer harus antara 1 - 180 menit</div>';
+          return;
+        }
+        state.apiUrl = url; state.timerMinutes = min;
+        save(API_URL_KEY, url); save(TIMER_KEY, min);
+        setPhase('register');
+      });
+    }
+
+    function bindRegister() {
+      $('#registerForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const name = $('#userName').value.trim();
+        if (name.length < 2) {
+          $('#registerError').innerHTML = '<div class="alert alert-error">Nama minimal 2 karakter</div>';
+          return;
+        }
+        state.userName = name;
+        fetchQuestions();
+      });
+      $('#reconfigureBtn').addEventListener('click', () => setPhase('config'));
+    }
+
+    function bindQuiz() {
+      // Options
+      document.querySelectorAll('.option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const q = state.questions[state.currentIndex];
+          state.answers[q.id] = btn.dataset.key;
+          persistQuizState();
+          render();
+        });
+      });
+      // Navigation
+      const prev = $('#prevBtn');
+      if (prev) prev.addEventListener('click', () => { state.currentIndex--; persistQuizState(); render(); });
+      const next = $('#nextBtn');
+      if (next) next.addEventListener('click', () => { state.currentIndex++; persistQuizState(); render(); });
+      const finish = $('#finishBtn');
+      if (finish) finish.addEventListener('click', () => { state.showConfirm = true; render(); });
+      const finishEarly = $('#finishEarly');
+      if (finishEarly) finishEarly.addEventListener('click', () => { state.showConfirm = true; render(); });
+      // Nav grid
+      const toggle = $('#toggleNav');
+      if (toggle) toggle.addEventListener('click', () => { state.showNav = !state.showNav; render(); });
+      document.querySelectorAll('.qgrid button').forEach(btn => {
+        btn.addEventListener('click', () => { state.currentIndex = parseInt(btn.dataset.idx); state.showNav = false; persistQuizState(); render(); });
+      });
+      // Modal
+      const cancel = $('#cancelFinish');
+      if (cancel) cancel.addEventListener('click', () => { state.showConfirm = false; render(); });
+      const confirm = $('#confirmFinish');
+      if (confirm) confirm.addEventListener('click', () => { state.showConfirm = false; finishQuiz(); });
+      const overlay = $('#modalOverlay');
+      if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) { state.showConfirm = false; render(); } });
+      // Prevent accidental close
+      window.addEventListener('beforeunload', e => { e.preventDefault(); });
+    }
+
+    function bindResult() {
+      $('#resetBtn').addEventListener('click', () => {
+        stopTimer(); clearQuizState();
+        state = { ...state, phase: 'register', questions: [], answers: {}, currentIndex: 0, timeLeft: 0, result: null, submitStatus: '', error: '', showConfirm: false, autoSubmitted: false, isSubmitting: false };
+        render();
+      });
+    }
+
+    // Initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = restoreQuizState();
+      if (saved) {
+        if (state.phase === 'quiz') startTimer();
+      } else {
+        state.phase = state.apiUrl ? 'register' : 'config';
+      }
+      render();
+    });
+  </script>
+</body>
+</html>
